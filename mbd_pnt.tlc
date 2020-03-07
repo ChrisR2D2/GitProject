@@ -1,0 +1,948 @@
+%% SYSTLC: Model Based Design Toolbox MPC574xP Code Generation Target \
+%%    TMF: mbd_pnt.tmf MAKE: mbd_pnt_make_rtw COPY_MDLREF_INCLUDES=0 EXTMODE: no_ext_comm
+%%
+%%
+%%
+%% Copyright (c) 2016 Freescale Semiconductor, Inc.
+%% Copyright (c) 2017 NXP.
+%% All rights reserved.
+%%
+%%
+%%
+
+%selectfile NULL_FILE
+
+%% Standard (required) Real-Time Workshop settings
+
+%assign CodeFormat         = "Embedded-C"
+%assign AutoBuildProcedure = 0
+%assign TargetType         = "RT"
+%assign Language           = "C"
+%assign GenRTModel         = TLC_TRUE
+%assign ERTCustomFileTest  = TLC_TRUE
+%assign GenerateASAP2 = 0
+%assign isERT = FEVAL("detectTarget")
+
+
+%% Tie-in custom target option to Real-Time Workshop options
+
+
+%% Generate ISO_C math code whenever possible
+%if(isERT==1)
+%if GenFloatMathFcnCalls == "ISO_C"
+  %include "mathlib.tlc"
+  %<LibRegisterISOCMathFcnPrototypes()>
+%endif
+%endif
+
+%% Instruction pour GIT
+
+%% Generate the model code with RTW-EC but generate a target
+%% specific main.c
+
+%assign ERTCustomFileTemplate = "mbdtargettemplate.tlc"
+ %include "mbdtargetmainlibpnt.tlc"
+
+%assign MATLABROOT = FEVAL("matlabroot")
+%assign modelname = FEVAL("bdroot")
+%assign hooksfound = FEVAL("find_hook_routines")
+
+%% Add user defined cache here
+
+
+%assign copyfiles = FEVAL("mbd_pnt_copy_required_files")
+
+%assign dofixup = FEVAL("fixup_alignment","clear")
+
+%include "codegenentry.tlc"
+
+%assign dofixup = FEVAL("fixup_alignment","dofixup","%<modelname>.h")
+
+
+%% Custom RTW dialog options
+
+
+/%
+  BEGIN_RTW_OPTIONS
+
+   %%global MB_obj =  mbd_pnt_mb_init();
+
+  linker_file_S32DS = mbd_pnt_LinkerFile_FS('S32 Design Studio');
+  %% linker_file_CW   = mbd_pnt_LinkerFile_FS('CodeWarrior');
+  linker_file_GHS  = mbd_pnt_LinkerFile_FS('GreenHills Multi');
+  linker_file_DIAB = mbd_pnt_LinkerFile_FS('DIAB');
+
+  idx=1;
+  rtwoptions(idx).prompt        = 'Target MCU Config';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Category';
+  rtwoptions(idx).default       = 8;  % number of items under this categor
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = '';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = '';
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Target MCU MPC574xP';
+  rtwoptions(idx).enable         = 'on';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'MPC5744P';
+  rtwoptions(idx).popupstrings  = 'MPC5744P|MPC5743P|MPC5742P';
+  rtwoptions(idx).tlcvariable   = 'target_mcu';
+  rtwoptions(idx).makevariable  = 'TARGET_MCU';
+  rtwoptions(idx).tooltip       = ['Select Target MCU'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 1, ''target_mcu'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Target MCU Package';
+  rtwoptions(idx).enable         = 'on';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = '144LQFP';
+  rtwoptions(idx).popupstrings  = '144LQFP|176LQFP|257BGA';
+  rtwoptions(idx).tlcvariable   = 'mcu_target_package';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select Target MCU Package'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 2, ''mcu_target_package'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'System Clock Frequency MHz';
+  rtwoptions(idx).enable         = 'on';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = '200';
+  rtwoptions(idx).popupstrings  = '200';
+  rtwoptions(idx).tlcvariable   = 'mcu_system_clock_freq';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select System Clock Frequency in MHz'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 3, ''mcu_system_clock_freq'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'XTAL Frequency MHz';
+  rtwoptions(idx).enable         = 'on';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = '40';
+  rtwoptions(idx).popupstrings  = '40';
+  rtwoptions(idx).tlcvariable   = 'mcu_xtal_freq';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select a Crystal Frequency in MHz'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 4, ''mcu_xtal_freq'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Global Interrupt Priority';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = '8';
+  rtwoptions(idx).popupstrings  = '0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31';
+  rtwoptions(idx).tlcvariable   = 'mcu_global_irq_pri';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Global System Interrupt Priority'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 5, ''mcu_global_irq_pri'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Base System Tick Interrupt Priority';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = '12';
+  rtwoptions(idx).popupstrings  = '0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31';
+  rtwoptions(idx).tlcvariable   = 'mcu_base_irq_pri';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Base System System Timer Interrupt Priority'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 6, ''mcu_base_irq_pri'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'System Tick Suppres';
+  rtwoptions(idx).enable         = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'off';
+  rtwoptions(idx).tlcvariable   = 'mcu_sys_tick_supress';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['To Suppress System Tick Timer Interrupt'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 7, ''mcu_sys_tick_supress'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt         = 'Target Compiler Opts';
+  rtwoptions(idx).enable         = 'on';
+  rtwoptions(idx).type           = 'Category';
+  rtwoptions(idx).default        = 20;
+  rtwoptions(idx).popupstrings   = '';
+  rtwoptions(idx).tlcvariable    = '';
+  rtwoptions(idx).makevariable   = '';
+  rtwoptions(idx).tooltip        = '';
+  rtwoptions(idx).callback       = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Generate S32 Design Studio ProjectInfo.xml file';
+  rtwoptions(idx).enable        = 'on';  
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'ds_import_enable';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['To enable S32 Design Studio ProjectInfo.xml file generation'];
+  rtwoptions(idx).callback      = '';
+
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Compiler Selection';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'S32 Design Studio';
+  rtwoptions(idx).popupstrings  = 'S32 Design Studio|GreenHills Multi|DIAB';
+  rtwoptions(idx).tlcvariable   = 'target_compiler';
+  rtwoptions(idx).makevariable  = 'TARGET_COMPILER';
+  rtwoptions(idx).tooltip       = ['Select Target Compiler'];
+  rtwoptions(idx).callback      = 'mbd_pnt_compiler_callback(hDlg, hSrc, ''target_compiler'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Target Memory Model';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'FLASH';
+  rtwoptions(idx).popupstrings  = 'FLASH|SRAM';
+  rtwoptions(idx).tlcvariable   = 'target_memory';
+  rtwoptions(idx).makevariable  = 'TARGET_MEMORY';
+  rtwoptions(idx).tooltip       = ['Select Target Memory for Execution'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mem_callback(hDlg, hSrc, ''target_memory'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'S32DS Compile Options';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '-g3 -mbig -mvle -O3 -mregnames -mlsp -specs=ewl_c9x.specs -mhard-float -Wall -c -std=c99 -fdata-sections -ffunction-sections -fsigned-char -fmessage-length=0 -nostdinc';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 's32ds_target_compile_opts';
+  rtwoptions(idx).makevariable  = 'S32DS_TARGET_CC_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Compiler Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'S32DS Assemble Options';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '-g3 -mbig -mvle -mregnames';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 's32ds_target_assemble_opts';
+  rtwoptions(idx).makevariable  = 'S32DS_TARGET_ASM_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Assembler Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'S32DS Link Options';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '-Xlinker --gc-sections -mhard-float';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 's32ds_target_link_opts';
+  rtwoptions(idx).makevariable  = 'S32DS_TARGET_LINK_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Linker Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'S32DS Library Options';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 's32ds_target_lib_opts';
+  rtwoptions(idx).makevariable  = 'S32DS_TARGET_LIB_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Library Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'S32DS Default Target Memory Definitions';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 's32ds_target_default_lcf';
+  rtwoptions(idx).makevariable  = 'S32DS_TARGET_DEFAULT_LCF';
+  rtwoptions(idx).tooltip       = ['Check to use default Target LCF File'];
+  rtwoptions(idx).callback      = 'mbd_pnt_lcf_callback(hDlg, hSrc, ''s32ds_target_default_lcf'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'S32DS User Defined Target Memory Definitions';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'MPC5744P_RAM.ld';
+  rtwoptions(idx).popupstrings  = linker_file_S32DS;
+  rtwoptions(idx).tlcvariable   = 's32ds_target_user_lcf';
+  rtwoptions(idx).makevariable  = 'S32DS_TARGET_USER_LCF';
+  rtwoptions(idx).tooltip       = ['Enter User defined Target LCF File Name'];
+  rtwoptions(idx).callback      = '';
+
+  %% idx=idx+1;
+  %% rtwoptions(idx).prompt        = 'CodeWarrior Compile Options';
+  %% rtwoptions(idx).enable        = 'on';
+  %% rtwoptions(idx).type          = 'Edit';
+  %% rtwoptions(idx).default       = '-vle -DVLE_IS_ON -w off -gdwarf-2 -fp soft -char unsigned -proc Zen -gccincludes -nostdinc -nosyspath -ansi off -opt all -bool on -Cpp_exceptions off';
+  %% rtwoptions(idx).popupstrings  = '';
+  %% rtwoptions(idx).tlcvariable   = 'cw_target_compile_opts';
+  %% rtwoptions(idx).makevariable  = 'CW_TARGET_CC_OPTS';
+  %% rtwoptions(idx).tooltip       = ['Enter Target Compiler Options'];
+  %% rtwoptions(idx).callback      = '';
+
+  %% idx=idx+1;
+  %% rtwoptions(idx).prompt        = 'CodeWarrior Assemble Options';
+  %% rtwoptions(idx).enable        = 'on';
+  %% rtwoptions(idx).type          = 'Edit';
+  %% rtwoptions(idx).default       = '-vle -DVLE_IS_ON -proc Zen -list -gccincludes -nostdinc';
+  %% rtwoptions(idx).popupstrings  = '';
+  %% rtwoptions(idx).tlcvariable   = 'cw_target_assemble_opts';
+  %% rtwoptions(idx).makevariable  = 'CW_TARGET_ASM_OPTS';
+  %% rtwoptions(idx).tooltip       = ['Enter Target Assembler Options'];
+  %% rtwoptions(idx).callback      = '';
+
+  %% idx=idx+1;
+  %% rtwoptions(idx).prompt        = 'CodeWarrior FLASH Link Options';
+  %% rtwoptions(idx).enable        = 'on';
+  %% rtwoptions(idx).type          = 'Edit';
+  %% rtwoptions(idx).default       = '-w off -gdwarf-2 -fp soft -char signed -proc Zen -nostdlib -srec -m _start -romaddr 0x00FA0010 -rambuffer 0x00FA0010';
+  %% rtwoptions(idx).popupstrings  = '';
+  %% rtwoptions(idx).tlcvariable   = 'cw_flash_target_link_opts';
+  %% rtwoptions(idx).makevariable  = 'CW_FLASH_TARGET_LINK_OPTS';
+  %% rtwoptions(idx).tooltip       = ['Enter Target Linker Options'];
+  %% rtwoptions(idx).callback      = '';
+
+  %% idx=idx+1;
+  %% rtwoptions(idx).prompt        = 'CodeWarrior SRAM Link Options';
+  %% rtwoptions(idx).enable        = 'off';
+  %% rtwoptions(idx).type          = 'Edit';
+  %% rtwoptions(idx).default       = '-w off -gdwarf-2 -fp soft -char signed -proc Zen -nostdlib -srec -m _start';
+  %% rtwoptions(idx).popupstrings  = '';
+  %% rtwoptions(idx).tlcvariable   = 'cw_sram_target_link_opts';
+  %% rtwoptions(idx).makevariable  = 'CW_TARGET_LINK_OPTS';
+  %% rtwoptions(idx).tooltip       = ['Enter Target Linker Options'];
+  %% rtwoptions(idx).callback      = '';
+
+  %% idx=idx+1;
+  %% rtwoptions(idx).prompt        = 'CodeWarrior Library Options';
+  %% rtwoptions(idx).enable        = 'on';
+  %% rtwoptions(idx).type          = 'Edit';
+  %% rtwoptions(idx).default       = '-proc zen -library -nostdlib -gdwarf-2 -fp efpu -char unsigned';
+  %% rtwoptions(idx).popupstrings  = '';
+  %% rtwoptions(idx).tlcvariable   = 'cw_target_lib_opts';
+  %% rtwoptions(idx).makevariable  = 'CW_TARGET_LIB_OPTS';
+  %% rtwoptions(idx).tooltip       = ['Enter Target Library Options'];
+  %% rtwoptions(idx).callback      = '';
+
+  %% idx=idx+1;
+  %% rtwoptions(idx).prompt        = 'CodeWarrior Default Target Memory Definitions';
+  %% rtwoptions(idx).enable        = 'on';
+  %% rtwoptions(idx).type          = 'Checkbox';
+  %% rtwoptions(idx).default       = 'on';
+  %% rtwoptions(idx).popupstrings  = '';
+  %% rtwoptions(idx).tlcvariable   = 'cw_target_default_lcf';
+  %% rtwoptions(idx).makevariable  = 'CW_TARGET_DEFAULT_LCF';
+  %% rtwoptions(idx).tooltip       = ['Check to use default Target LCF File'];
+  %% rtwoptions(idx).callback      = 'mbd_pnt_lcf_callback(hDlg, hSrc, ''cw_target_default_lcf'')';
+
+  %% idx=idx+1;
+  %% rtwoptions(idx).prompt        = 'CodeWarrior User Defined Target Memory Definitions';
+  %% rtwoptions(idx).enable        = 'off';
+  %% rtwoptions(idx).type          = 'Popup';
+  %% rtwoptions(idx).default       = 'MPC5744P_RAM.lcf';
+  %% rtwoptions(idx).popupstrings  = linker_file_CW;
+  %% rtwoptions(idx).tlcvariable   = 'cw_target_user_lcf';
+  %% rtwoptions(idx).makevariable  = 'CW_TARGET_USER_LCF';
+  %% rtwoptions(idx).tooltip       = ['Enter User defined Target LCF File Name'];
+  %% rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'GHS Compile Options';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = ' -preprocess_assembly_files -g -dwarf2 -noSPE -filetype.c';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'ghs_target_compile_opts';
+  rtwoptions(idx).makevariable  = 'GHS_TARGET_CC_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Compiler Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'GHS Assemble Options';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = ' -preprocess_assembly_files -g -dwarf2 -e _start_core -srec -filetype.assembly';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'ghs_target_assemble_opts';
+  rtwoptions(idx).makevariable  = 'GHS_TARGET_ASM_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Assembler Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'GHS Link Options';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'ghs_target_link_opts';
+  rtwoptions(idx).makevariable  = 'GHS_TARGET_LINK_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Linker Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'GHS Library Options';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'ghs_target_lib_opts';
+  rtwoptions(idx).makevariable  = 'GHS_TARGET_LIB_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Library Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'GHS Default Target Memory Definitions';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'ghs_target_default_lcf';
+  rtwoptions(idx).makevariable  = 'GHS_TARGET_DEFAULT_LCF';
+  rtwoptions(idx).tooltip       = ['Check to use default Target LCF File'];
+  rtwoptions(idx).callback      = 'mbd_pnt_lcf_callback(hDlg, hSrc, ''ghs_target_default_lcf'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'GHS User Defined Target Memory Definitions';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'MPC5744P_RAM.ld';
+  rtwoptions(idx).popupstrings  = linker_file_GHS;
+  rtwoptions(idx).tlcvariable   = 'ghs_target_user_lcf';
+  rtwoptions(idx).makevariable  = 'GHS_TARGET_USER_LCF';
+  rtwoptions(idx).tooltip       = ['Enter User defined Target LCF File Name'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'DIAB Compile Options';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '-@E+err.log -c -g -Xenum-is-best -Xlint -Xnested-interrupts -Xdebug-local-cie -Xclib-optim-off -Xc-new';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'diab_target_compile_opts';
+  rtwoptions(idx).makevariable  = 'DIAB_TARGET_CC_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Compiler Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'DIAB Assemble Options';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '-@E+err.log -l -g';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'diab_target_assemble_opts';
+  rtwoptions(idx).makevariable  = 'DIAB_TARGET_ASM_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Assembler Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'DIAB Link Options';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '-@E+err.log -Ws -m6 -lc -lm';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'diab_target_link_opts';
+  rtwoptions(idx).makevariable  = 'DIAB_TARGET_LINK_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Linker Options'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'DIAB Library Options';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'diab_target_lib_opts';
+  rtwoptions(idx).makevariable  = 'DIAB_TARGET_LIB_OPTS';
+  rtwoptions(idx).tooltip       = ['Enter Target Library Options'];
+  rtwoptions(idx).callback      = '';
+
+ idx=idx+1;
+  rtwoptions(idx).prompt        = 'DIAB Default Target Memory Definitions';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = 'diab_target_default_lcf';
+  rtwoptions(idx).makevariable  = 'DIAB_TARGET_DEFAULT_LCF';
+  rtwoptions(idx).tooltip       = ['Check to use default Target LCF File'];
+  rtwoptions(idx).callback      = 'mbd_pnt_lcf_callback(hDlg, hSrc, ''diab_target_default_lcf'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'DIAB User Defined Target Memory Definitions';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'MPC5744P_RAM.lin';
+  rtwoptions(idx).popupstrings  = linker_file_DIAB;
+  rtwoptions(idx).tlcvariable   = 'diab_target_user_lcf';
+  rtwoptions(idx).makevariable  = 'DIAB_TARGET_USER_LCF';
+  rtwoptions(idx).tooltip       = ['Enter User defined Target LCF File Name'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'FreeMASTER Config';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Category';
+  rtwoptions(idx).default       = 14;
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = '';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = '';
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Enable FreeMASTER';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'off';
+  rtwoptions(idx).tlcvariable   = 'fmaster_enable';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['FreeMASTER Enable Selection, check to include FreeMASTER in build'];
+  rtwoptions(idx).callback      = 'mbd_pnt_fmaster_callback(hDlg, hSrc, ''fmaster_enable'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'FreeMASTER Interface';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'Serial0';
+  rtwoptions(idx).popupstrings  = 'Serial0|Serial1|FlexCAN0|FlexCAN1|FlexCAN2';
+  rtwoptions(idx).tlcvariable   = 'fmaster_interface';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Interface Device'];
+  rtwoptions(idx).callback      = 'mbd_pnt_fmaster_callback(hDlg, hSrc, ''fmaster_interface'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'FreeMASTER Serial Baud Rate';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = '57600';
+  rtwoptions(idx).popupstrings  = '2400|9600|14400|19200|38400|57600|115200|256000';
+  rtwoptions(idx).tlcvariable   = 'fmaster_serial_baud_rate';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Interface Device'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 8, ''fmaster_serial_baud_rate'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'FreeMASTER CAN Baud Rate';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = '1M';
+  rtwoptions(idx).popupstrings  = '1M|500K';
+  rtwoptions(idx).tlcvariable   = 'fmaster_can_baud_rate';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Interface Device'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 9, ''fmaster_can_baud_rate'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Serial0 Tx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'LIN0_B[2]';
+  rtwoptions(idx).popupstrings  = 'LIN0_B[2]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_serial_tx_pin_0';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Serial Transmit Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Serial0 Rx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'LIN0_B[3]';
+  rtwoptions(idx).popupstrings  = 'LIN0_B[3]|LIN0_B[7]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_serial_rx_pin_0';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Receive Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Serial1 Tx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'LIN1_F[14]';
+  rtwoptions(idx).popupstrings  = 'LIN1_D[9]|LIN1_F[14]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_serial_tx_pin_1';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Serial Transmit Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Serial1 Rx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'LIN1_F[15]';
+  rtwoptions(idx).popupstrings  = 'LIN1_B[13]|LIN1_D[12]|LIN1_F[15]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_serial_rx_pin_1';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Receive Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'CAN0 Tx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'CAN0_B[0]';
+  rtwoptions(idx).popupstrings  = 'CAN0_B[0]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_can_tx_pin_0';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER CAN Transmit Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'CAN0 Rx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'CAN0_A[15]';
+  rtwoptions(idx).popupstrings  = 'CAN0_A[15]|CAN0_B[1]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_can_rx_pin_0';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Receive Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'CAN1 Tx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'CAN1_A[14]';
+  rtwoptions(idx).popupstrings  = 'CAN1_A[14]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_can_tx_pin_1';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER CAN Transmit Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'CAN1 Rx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'CAN1_A[15]';
+  rtwoptions(idx).popupstrings  = 'CAN1_A[15]|CAN1_B[1]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_can_rx_pin_1';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Receive Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'CAN2 Tx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'CAN2_F[14]';
+  rtwoptions(idx).popupstrings  = 'CAN2_F[14]|CAN2_I[5]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_can_tx_pin_2';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER CAN Transmit Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'CAN2 Rx Pin Selection';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'CAN2_F[15]';
+  rtwoptions(idx).popupstrings  = 'CAN2_F[15]|CAN2_I[6]|CAN2_J[8]';
+  rtwoptions(idx).tlcvariable   = 'fmaster_can_rx_pin_2';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select FreeMASTER Receive Pin'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'PIL and Download Config';
+  rtwoptions(idx).type          = 'Category';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).default       = 12;
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = '';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = '';
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Enable PIL Mode Download';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'off';
+  rtwoptions(idx).tlcvariable   = 'pil_download_enable';
+  rtwoptions(idx).makevariable  = 'PIL_DOWNLOAD';
+  rtwoptions(idx).tooltip       = ['Enable download code to target after build is complete.'];
+  rtwoptions(idx).callback      = 'mbd_pnt_pil_callback(hDlg, hSrc, ''pil_download_enable'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Enable Download Code after Build';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'off';
+  rtwoptions(idx).tlcvariable   = 'rbl_download_enable';
+  rtwoptions(idx).makevariable  = 'RBL_DOWNLOAD';
+  rtwoptions(idx).tooltip       = ['Enable download code to target after build is complete.'];
+  rtwoptions(idx).callback      = 'mbd_pnt_pil_callback(hDlg, hSrc, ''rbl_download_enable'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'BAM Restart Request';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'off';
+  rtwoptions(idx).tlcvariable   = 'rbl_restart_request';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Restart Evaluation Board request.'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Delay before start application';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '5000000';
+  rtwoptions(idx).tlcvariable   = 'rbl_start_delay';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['This value is used to configure BAM to how long wait data befor start application'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'COM Port';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '1';
+  rtwoptions(idx).tlcvariable   = 'rbl_com_port';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['COM Port Number'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 10, ''rbl_com_port'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Baud Rate';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = '115200';
+  rtwoptions(idx).popupstrings  = '115200';
+  rtwoptions(idx).tlcvariable   = 'pil_download_rate';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Download and PIL Connection baud rate'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 11, ''pil_download_rate'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'PIL Interface';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Popup';
+  rtwoptions(idx).default       = 'Serial0';
+  rtwoptions(idx).popupstrings  = 'Serial0|Serial1';
+  rtwoptions(idx).tlcvariable   = 'pil_interface';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Select PIL Interface Device'];
+  rtwoptions(idx).callback      = 'mbd_pnt_mb_SendEvent(hDlg, hSrc, 12, ''pil_interface'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Default Password';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'off';
+  rtwoptions(idx).tlcvariable   = 'rbl_def_password';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Enable BAM Password option.'];
+  rtwoptions(idx).callback      = 'mbd_pnt_pil_callback(hDlg, hSrc, ''rbl_def_password'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'BAM Password';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '0xFEEDFACECAFEBEEF';
+  rtwoptions(idx).tlcvariable   = 'rbl_password';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Password for BAM'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'BAM Manual Start Address and Code Size';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'off';
+  rtwoptions(idx).tlcvariable   = 'rbl_manual_len_size';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Ebaled manual options for BAM'];
+  rtwoptions(idx).callback      = 'mbd_pnt_pil_callback(hDlg, hSrc, ''rbl_manual_len_size'')';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'BAM Start Address';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '0x0';
+  rtwoptions(idx).tlcvariable   = 'rbl_start_address';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Application Start Address'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'BAM Code Size';
+  rtwoptions(idx).enable        = 'off';
+  rtwoptions(idx).type          = 'Edit';
+  rtwoptions(idx).default       = '0x7000';
+  rtwoptions(idx).tlcvariable   = 'rbl_code_size';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Application Size'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Diagnostics';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Category';
+  rtwoptions(idx).default       = 14;
+  rtwoptions(idx).popupstrings  = '';
+  rtwoptions(idx).tlcvariable   = '';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = '';
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'ADC - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'ADC_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['ADC - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'AMMCLIB - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'AMMCLIB_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['AMMCLIB - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'CAN - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'CAN_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['CAN - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'CTU - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'CTU_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['CTU - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'DSPI - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'DSPI_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['DSPI - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'eTimer - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'eTimer_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['eTimer - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'DMA - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'DMA_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['DMA - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'FlexPWM - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'FlexPWM_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['FlexPWM - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'FreeMaster - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'FM_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['FreeMaster - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'GPIO - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'GPIO_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['GPIO - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'LINFlexD - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'LINFlexD_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['LINFlexD - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'Model Reference - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'ModelRef_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['Model Reference - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'PIT - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'PIT_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['PIT - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+  idx=idx+1;
+  rtwoptions(idx).prompt        = 'SWG - Check to enable cross checks; Uncheck to disable cross checks. ';
+  rtwoptions(idx).enable        = 'on';
+  rtwoptions(idx).type          = 'Checkbox';
+  rtwoptions(idx).default       = 'on';
+  rtwoptions(idx).tlcvariable   = 'SWG_PcrCheckEnDis';
+  rtwoptions(idx).makevariable  = '';
+  rtwoptions(idx).tooltip       = ['SWG - Check to enable cross checks; Uncheck to disable cross checks'];
+  rtwoptions(idx).callback      = '';
+
+
+
+  rtwgensettings.SelectCallback = 'mbd_pnt_selectcallback(hDlg, hSrc)';
+
+  rtwgensettings.ActivateCallback = 'mbd_pnt_activatecallback(hDlg, hSrc)';
+
+  rtwgensettings.PostApplyCallback = 'mbd_pnt_postapplycallback(hDlg, hSrc)';
+
+
+  % Inherit ERT options
+  rtwgensettings.DerivedFrom = 'ert.tlc';
+
+  % Specify the RTW build directory name (failure to do so results
+  % in the code generating into the current MATLAB directory)
+
+  rtwgensettings.BuildDirSuffix = '_mbd_rtw';
+  rtwgensettings.Version = '1';
+
+  END_RTW_OPTIONS
+%/
