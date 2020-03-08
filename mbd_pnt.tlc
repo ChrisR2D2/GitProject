@@ -36,6 +36,7 @@
 %endif
 
 %% Instruction pour GIT
+%% Ajout d'un commentaire poru GIT
 
 %% Generate the model code with RTW-EC but generate a target
 %% specific main.c
