@@ -35,7 +35,10 @@
 %endif
 %endif
 
+
 %% Instruction pour GIT - modifié depuis le WEB
+%% Ajout d'un commentaire pour GIT
+
 
 %% Generate the model code with RTW-EC but generate a target
 %% specific main.c
